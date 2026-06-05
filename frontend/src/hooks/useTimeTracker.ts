@@ -3,7 +3,7 @@ import { api } from "../lib/api";
 
 const HEARTBEAT_MS = 10_000;
 const IDLE_THRESHOLD_MS = 30_000;
-const ACTIVITY_EVENTS: (keyof DocumentEventMap)[] = [
+const ACTIVITY_EVENTS = [
   "mousemove",
   "mousedown",
   "click",
@@ -11,7 +11,7 @@ const ACTIVITY_EVENTS: (keyof DocumentEventMap)[] = [
   "scroll",
   "touchstart",
   "wheel",
-];
+] as const;
 
 /**
  * Hook that drives client-side time tracking.
