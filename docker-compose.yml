@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: annotool
+      POSTGRES_PASSWORD: annotool
+      POSTGRES_DB: annotool
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U annotool"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://annotool:annotool@db:5432/annotool
+      FRONTEND_URL: http://localhost:5173
+      OAUTH_REDIRECT_URI: http://localhost:8000/auth/google/callback
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+volumes:
+  pgdata:
