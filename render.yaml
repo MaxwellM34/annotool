@@ -1,11 +1,12 @@
+# Render blueprint. After `bash deploy.sh` pushes to GitHub, Render reads this file
+# and creates ONE web service that bundles the React build inside the FastAPI Docker image.
 services:
   - type: web
-    name: annotool-backend
-    runtime: python
-    rootDir: backend
+    name: annotool
+    runtime: docker
+    dockerfilePath: ./Dockerfile
     plan: free
-    buildCommand: pip install -e . && alembic upgrade head
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -17,28 +18,13 @@ services:
         sync: false
       - key: OAUTH_REDIRECT_URI
         sync: false
+      - key: FRONTEND_URL
+        sync: false
       - key: ALLOWED_EMAILS
         sync: false
       - key: ADMIN_EMAIL
-        sync: false
-      - key: FRONTEND_URL
         sync: false
       - key: PUSH_TOKEN
         sync: false
       - key: DEFAULT_HOURLY_RATE_CENTS
         value: "2500"
-
-  - type: web
-    name: annotool-frontend
-    runtime: static
-    rootDir: frontend
-    plan: free
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    envVars:
-      - key: VITE_API_URL
-        sync: false
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
