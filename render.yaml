@@ -2,7 +2,7 @@
 # and creates ONE web service that bundles the React build inside the FastAPI Docker image.
 services:
   - type: web
-    name: annotool
+    name: annotool-mm34
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free

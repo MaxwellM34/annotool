@@ -68,6 +68,23 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ hourly_rate_cents }),
     }),
+
+  storage: () => request<StorageStatus>("/api/system/storage"),
+  systemInfo: () => request<SystemInfo>("/api/system/info"),
+};
+
+export type StorageStatus = {
+  used_bytes: number;
+  limit_bytes: number;
+  percent_used: number;
+  locked: boolean;
+  lock_at_percent: number;
+};
+
+export type SystemInfo = {
+  currency_code: string;
+  currency_symbol: string;
+  idle_threshold_seconds: number;
 };
 
 export type Me = {
@@ -146,6 +163,15 @@ export function fmtHMS(seconds: number): string {
   return `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
 }
 
+let currencySymbol = "CA$";
+let currencyCode = "CAD";
+export function setCurrency(symbol: string, code: string) {
+  currencySymbol = symbol;
+  currencyCode = code;
+}
 export function fmtMoney(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
+  return `${currencySymbol}${(cents / 100).toFixed(2)}`;
+}
+export function getCurrencyCode(): string {
+  return currencyCode;
 }

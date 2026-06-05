@@ -27,3 +27,8 @@ Thumbs.db
 # Runtime
 /data/
 *.log
+
+# Secrets (never commit — values come from .env.deploy.example template only)
+.env.deploy
+.env.deploy.local
+fly.generated.toml

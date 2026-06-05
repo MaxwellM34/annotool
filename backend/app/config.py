@@ -19,9 +19,17 @@ class Settings(BaseSettings):
     push_token: str = ""
 
     default_hourly_rate_cents: int = 2500
+    currency_code: str = "CAD"
+    currency_symbol: str = "CA$"
 
     # Time-tracking
     idle_threshold_seconds: int = 30
+
+    # Storage guard — Neon free tier is 0.5 GB = 536870912 bytes.
+    # When pg_database_size hits storage_lock_percent of this, the app refuses
+    # new uploads + writes and the frontend shows a "storage full" page.
+    storage_limit_bytes: int = 536_870_912  # 0.5 GB
+    storage_lock_percent: int = 90  # lock at 90 %
 
     @property
     def allowed_emails_set(self) -> set[str]:

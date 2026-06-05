@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://annotool-mm34.onrender.com/api/:path*" },
+    { "source": "/auth/:path*", "destination": "https://annotool-mm34.onrender.com/auth/:path*" },
+    { "source": "/healthz", "destination": "https://annotool-mm34.onrender.com/healthz" },
+    { "source": "/((?!.*\\..*).*)", "destination": "/index.html" }
+  ]
+}

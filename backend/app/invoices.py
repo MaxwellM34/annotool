@@ -75,7 +75,8 @@ def _fmt_hms(seconds: int) -> str:
 
 
 def _fmt_money(cents: int) -> str:
-    return f"${cents/100:.2f}"
+    from .config import settings
+    return f"{settings.currency_symbol}{cents/100:.2f}"
 
 
 def build_invoice_pdf(
@@ -105,6 +106,8 @@ def build_invoice_pdf(
     elements.append(Spacer(1, 6))
     elements.append(Paragraph(f"<b>For:</b> {user.name or user.email}", styles["Normal"]))
     elements.append(Paragraph(f"<b>Email:</b> {user.email}", styles["Normal"]))
+    from .config import settings as _s
+    elements.append(Paragraph(f"<b>Currency:</b> {_s.currency_code}", styles["Normal"]))
     elements.append(Spacer(1, 18))
 
     rows = [["Date", "Hours", "Time"]]

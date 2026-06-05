@@ -12,6 +12,7 @@ from ..auth import admin_user, current_user
 from ..config import settings
 from ..db import get_session
 from ..models import AnnotationSet, Image, User
+from ..storage import storage_status
 
 router = APIRouter(prefix="/api/images", tags=["images"])
 
@@ -38,6 +39,12 @@ async def push_image(
     Bearer-token authenticated. Upserts on (slug, iter).
     """
     _check_push_token(authorization)
+    st = await storage_status(session)
+    if st.locked:
+        raise HTTPException(
+            status.HTTP_507_INSUFFICIENT_STORAGE,
+            f"storage full ({st.percent_used:.1f}% of {st.limit_bytes} bytes) — admin must increase the database plan",
+        )
     blob = await file.read()
     try:
         with PILImage.open(io.BytesIO(blob)) as im:
