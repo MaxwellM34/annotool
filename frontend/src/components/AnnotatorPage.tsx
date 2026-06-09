@@ -76,6 +76,28 @@ export default function AnnotatorPage() {
     }
   }
 
+  async function markPassed() {
+    if (!image || round === null) return;
+    if (annotations.length > 0 && !confirm("You have annotations drawn. Marking as Passes inspection will save an empty pass record instead. Continue?")) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const saved = await api.saveAnnotation({
+        image_id: image.id,
+        round,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: { annotations: [], passed: true } as any,
+      });
+      setSavedAt(saved.saved_at);
+      setAnnotations([]);
+      const sets = await api.annotationsFor(image.id);
+      setHistory(sets);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!image) return <div className="p-8 text-zinc-400">Loading image…</div>;
 
   return (
@@ -171,19 +193,32 @@ export default function AnnotatorPage() {
           </div>
         )}
 
-        <div className="p-4 border-b border-zinc-800 flex items-center gap-3">
-          <button
-            onClick={save}
-            disabled={saving || annotations.length === 0}
-            className="px-4 py-2 rounded bg-accent text-white text-sm font-medium hover:opacity-90 disabled:opacity-40"
-          >
-            {saving ? "Saving…" : `Save round ${round ?? ""}`}
-          </button>
-          {savedAt && (
-            <span className="text-xs text-zinc-500">
-              saved {new Date(savedAt).toLocaleTimeString()}
-            </span>
-          )}
+        <div className="p-4 border-b border-zinc-800 space-y-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={save}
+              disabled={saving || annotations.length === 0}
+              className="px-4 py-2 rounded bg-accent text-white text-sm font-medium hover:opacity-90 disabled:opacity-40"
+            >
+              {saving ? "Saving…" : `Save round ${round ?? ""}`}
+            </button>
+            <button
+              onClick={markPassed}
+              disabled={saving}
+              title="Mark this viewport as reviewed with no issues — saves an empty pass record."
+              className="px-4 py-2 rounded border border-emerald-700 text-emerald-300 hover:bg-emerald-950/40 disabled:opacity-40 text-sm font-medium"
+            >
+              ✓ Passes inspection
+            </button>
+            {savedAt && (
+              <span className="text-xs text-zinc-500">
+                saved {new Date(savedAt).toLocaleTimeString()}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-zinc-500">
+            Use <strong>Save round</strong> to record annotations you've drawn, or <strong>Passes inspection</strong> if nothing on this viewport needs to change.
+          </p>
         </div>
 
         <div className="p-4 flex-1 overflow-auto">
@@ -204,8 +239,15 @@ export default function AnnotatorPage() {
                     </span>
                   </div>
                   <div className="text-xs text-zinc-400 mt-1">
-                    {s.payload.annotations.length} annotation
-                    {s.payload.annotations.length === 1 ? "" : "s"}
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {(s.payload as any).passed ? (
+                      <span className="text-emerald-400 font-medium">✓ Passed inspection</span>
+                    ) : (
+                      <>
+                        {s.payload.annotations.length} annotation
+                        {s.payload.annotations.length === 1 ? "" : "s"}
+                      </>
+                    )}
                     {" · "}
                     <a
                       className="underline"

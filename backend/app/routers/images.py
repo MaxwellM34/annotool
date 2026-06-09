@@ -97,16 +97,31 @@ async def list_images(
     )
     latest = (await session.scalars(stmt)).all()
 
-    # Count annotations done by the calling user on each of those latest images.
+    # For each image: this user's latest annotation set (round + payload), so the
+    # frontend can show whether the user has marked it passed-inspection or
+    # left annotations.
     latest_ids = [im.id for im in latest]
     user_rounds: dict[int, int] = {}
+    user_latest_passed: dict[int, bool] = {}
+    user_latest_count: dict[int, int] = {}
     if latest_ids:
-        rows = (await session.execute(
-            select(AnnotationSet.image_id, func.max(AnnotationSet.round))
+        # Newest annotation set per (image_id) by this user
+        sub2 = (
+            select(AnnotationSet.image_id, func.max(AnnotationSet.id).label("max_id"))
             .where(AnnotationSet.image_id.in_(latest_ids), AnnotationSet.user_id == user.id)
             .group_by(AnnotationSet.image_id)
-        )).all()
-        user_rounds = {iid: r for iid, r in rows}
+            .subquery()
+        )
+        rows = (await session.execute(
+            select(AnnotationSet)
+            .join(sub2, AnnotationSet.id == sub2.c.max_id)
+        )).scalars().all()
+        for r in rows:
+            user_rounds[r.image_id] = r.round
+            payload = r.payload or {}
+            user_latest_passed[r.image_id] = bool(payload.get("passed"))
+            anns = payload.get("annotations") or []
+            user_latest_count[r.image_id] = len(anns) if isinstance(anns, list) else 0
 
     return [
         {
@@ -118,6 +133,8 @@ async def list_images(
             "height": im.height,
             "uploaded_at": im.uploaded_at.isoformat(),
             "your_latest_round": user_rounds.get(im.id, 0),
+            "your_latest_passed": user_latest_passed.get(im.id, False),
+            "your_latest_annotation_count": user_latest_count.get(im.id, 0),
         }
         for im in latest
     ]

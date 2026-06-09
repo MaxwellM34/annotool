@@ -105,6 +105,8 @@ export type ImageRow = {
   height: number;
   uploaded_at: string;
   your_latest_round?: number;
+  your_latest_passed?: boolean;
+  your_latest_annotation_count?: number;
 };
 
 export type Annotation = {
