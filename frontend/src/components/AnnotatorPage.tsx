@@ -7,6 +7,7 @@ import {
   api,
 } from "../lib/api";
 import { useTimeTracker } from "../hooks/useTimeTracker";
+import { DevicePreview, StretchReminder, parseSlugViewport } from "./DevicePreview";
 
 function makeId() {
   return `ann_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -22,7 +23,17 @@ export default function AnnotatorPage() {
   const [history, setHistory] = useState<AnnotationSet[]>([]);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
+  const [showDevicePreview, setShowDevicePreview] = useState(false);
   const { activeNow } = useTimeTracker(id, !!image);
+
+  const viewport = useMemo(() => (image ? parseSlugViewport(image.slug).viewport : null), [image]);
+
+  // Reset and pop the reminder modal every time the user opens a new image.
+  useEffect(() => {
+    setShowReminder(true);
+    setShowDevicePreview(false);
+  }, [id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +112,17 @@ export default function AnnotatorPage() {
   if (!image) return <div className="p-8 text-zinc-400">Loading image…</div>;
 
   return (
+    <>
+      {showReminder && (
+        <StretchReminder viewport={viewport} onDismiss={() => setShowReminder(false)} />
+      )}
+      {showDevicePreview && viewport && (
+        <DevicePreview
+          imageUrl={api.imagePngUrl(image.id)}
+          viewport={viewport}
+          onClose={() => setShowDevicePreview(false)}
+        />
+      )}
     <div className="flex h-[calc(100vh-49px)]">
       <Canvas
         image={image}
@@ -216,8 +238,18 @@ export default function AnnotatorPage() {
               </span>
             )}
           </div>
+          {viewport && (
+            <button
+              onClick={() => setShowDevicePreview(true)}
+              className="w-full px-3 py-2 rounded border border-zinc-700 hover:border-accent text-sm flex items-center justify-center gap-2"
+              title="See how this page actually looks inside a device frame at the real viewport size"
+            >
+              {viewport === "375" || viewport === "414" ? "📱" : viewport === "768" || viewport === "1024" ? "📲" : "💻"}
+              <span>Preview on device ({viewport} px)</span>
+            </button>
+          )}
           <p className="text-xs text-zinc-500">
-            Use <strong>Save round</strong> to record annotations you've drawn, or <strong>Passes inspection</strong> if nothing on this viewport needs to change.
+            Use <strong>Save round</strong> to record annotations you've drawn, or <strong>Passes inspection</strong> if nothing on this viewport needs to change. Always check the device preview before deciding.
           </p>
         </div>
 
@@ -271,6 +303,7 @@ export default function AnnotatorPage() {
         </div>
       </aside>
     </div>
+    </>
   );
 }
 
